@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { SignalrService } from '../../services/signalr.service';
 import { Point } from '../../models/point';
-import { Subscription } from 'rxjs';
+import { CookieService } from 'ngx-cookie-service';
 import { BoardService } from '../../services/board.service';
 import { Stroke } from '../../models/stroke';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -24,7 +24,8 @@ export class DrawingBoardComponent {
   constructor(
     private boardService: BoardService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cookieService: CookieService
   ) {
     this.route.params.subscribe((params) => {
       this.boardId = +params.id;
@@ -36,13 +37,11 @@ export class DrawingBoardComponent {
     this.canvas = <HTMLCanvasElement>document.getElementById('canvas');
     this.context = this.canvas.getContext('2d')!;
     this.setupCanvas();
-    this.signalrService.getConnectionInitialized().subscribe(() => {
-      this.initSignalRListeners();
-    });
+    this.initSignalRListeners();
   }
 
   private initSignalRListeners() {
-    this.signalrService.connection.on('newStroke', (data: any) => {
+    this.signalrService.getNewStroke().subscribe((data: any) => {
       this.newStrokeReceived(data);
     });
   }
@@ -123,7 +122,8 @@ export class DrawingBoardComponent {
   };
 
   goBackToMenu() {
-    this.signalrService.leaveBoard(this.boardId, '123');
+    const username = this.cookieService.get('username');
+    this.signalrService.leaveBoard(this.boardId, username);
     this.router.navigate(['']);
   }
 }

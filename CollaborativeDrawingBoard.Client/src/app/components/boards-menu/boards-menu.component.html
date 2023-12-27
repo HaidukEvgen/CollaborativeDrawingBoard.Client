@@ -1,24 +1,35 @@
-<div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <h2 class="card-title">Menu</h2>
-  
-            <h3>Available Boards:</h3>
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h2 class="card-title">Collaborative drawing boards</h2>
+
+          <h3>Available Boards:</h3>
+          <div class="board-list">
             <ul class="list-group">
               <li class="list-group-item" *ngFor="let board of boards">
-                {{ board.name }}
-                <ul>
-                  <li *ngFor="let user of board.users">{{ user }}</li>
-                </ul>
-                <button class="btn btn-primary" (click)="joinBoard(board.id)">Join Board</button>
+                <div class="board-info">
+                  <span class="board-name">{{ board.name }}</span>
+                  <button class="btn btn-primary" (click)="joinBoard(board.id)">
+                    Join Board
+                  </button>
+                </div>
+                <div class="active-users">
+                  <span class="active-users-label">Active Users:</span>
+                  <span class="usernames" *ngIf="board.usernames.length > 0">
+                    {{ board.usernames.join(", ") }}
+                  </span>
+                </div>
               </li>
             </ul>
-  
-            <button class="btn btn-success mt-3" (click)="createBoard()">Create New Board</button>
           </div>
+
+          <button class="btn btn-success mt-3" (click)="createBoard()">
+            Create New Board
+          </button>
         </div>
       </div>
     </div>
   </div>
+</div>

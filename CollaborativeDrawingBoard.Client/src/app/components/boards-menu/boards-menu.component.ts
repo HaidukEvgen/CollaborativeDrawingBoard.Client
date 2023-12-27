@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Board } from '../../models/board';
 import { Router } from '@angular/router';
 import { SignalrService } from '../../services/signalr.service';
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'app-boards-menu',
@@ -13,38 +14,42 @@ export class BoardsMenuComponent implements OnInit {
   private username!: string;
   private signalrService!: SignalrService;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private cookieService: CookieService) {}
   ngOnInit() {
     this.signalrService = SignalrService.getInstance();
-    this.signalrService.getConnectionInitialized().subscribe(() => {
+    if (this.signalrService.isConnected()) {
       this.initSignalRListeners();
       this.getBoards();
-    });
+    } else {
+      this.signalrService.getConnectionInitialized().subscribe(() => {
+        this.initSignalRListeners();
+        this.getBoards();
+      });
+    }
   }
+
   private initSignalRListeners() {
-    this.signalrService.connection.on('newBoardAdded', (board: Board) => {
+    this.signalrService.getNewBoardAdded().subscribe((board: Board) => {
       this.boards.push(board);
     });
 
-    this.signalrService.connection.on(
-      'userJoinedBoard',
-      (boardId: number, userName: string) => {
+    this.signalrService
+      .getUserJoinedBoard()
+      .subscribe(({ boardId, userName }) => {
         const board = this.boards.find((b) => b.id === boardId);
         if (board) {
-          board.users.push(userName);
+          board.usernames.push(userName);
         }
-      }
-    );
+      });
 
-    this.signalrService.connection.on(
-      'userLeftBoard',
-      (boardId: number, userName: string) => {
+    this.signalrService
+      .getUserLeftBoard()
+      .subscribe(({ boardId, userName }) => {
         const board = this.boards.find((b) => b.id === boardId);
         if (board) {
-          board.users = board.users.filter((u) => u !== userName);
+          board.usernames = board.usernames.filter((u) => u !== userName);
         }
-      }
-    );
+      });
   }
 
   getBoards() {
@@ -61,8 +66,13 @@ export class BoardsMenuComponent implements OnInit {
   }
 
   joinBoard(boardId: number) {
-    while (!this.username) {
+    const username = this.cookieService.get('username');
+
+    if (!username) {
       this.username = prompt('Enter the username:') || '';
+      this.cookieService.set('username', this.username);
+    } else {
+      this.username = username;
     }
 
     this.signalrService.joinBoard(boardId, this.username).then(() => {
